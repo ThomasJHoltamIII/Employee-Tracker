@@ -17,6 +17,7 @@ connection.connect((err) => {
   console.log('Roger Roger')
 });
 
+// Main Inquirer pormpt loop
 const mainLoop = async () => {
   while (true) {
     const answer = await prompt([
@@ -41,6 +42,7 @@ const mainLoop = async () => {
         ],
       },
     ])
+    // Functions to fire off prompts for specific queries
     switch (answer.action) {
       case 'View Employees By Manager':
         await viewEmployeesByManager()
@@ -98,6 +100,7 @@ const mainLoop = async () => {
   }
 };
 
+// Get functions using async that are called on in later queries that specify certian data that is needed, such as first and last names
 const getManagers = async () => {
   const query = 'SELECT manager_id, CONCAT(first_name, " ", last_name) AS manager_name FROM managers'
   try {
@@ -142,6 +145,7 @@ const getRoles= async () => {
   }
 };
 
+// Add department
 const addDepartment = async () => {
   const newDepartment = await prompt([
     {
@@ -159,6 +163,8 @@ const addDepartment = async () => {
   }
 };
 
+
+// Add employee
 const addEmployee = async () => {
   const roles = await getRoles()
   const managers = await getManagers()
@@ -215,6 +221,8 @@ const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, salary
   }
 };
 
+
+//  Update Employee Role
 const updateEmployeeRole = async () => {
   const employees = await getEmployee()
   const employeeSelect = await prompt({
@@ -228,6 +236,10 @@ const updateEmployeeRole = async () => {
   if (employeeSelect.employee_id === 'Back') {
     return
   }
+
+  // This structure is used in almost every function, calling upon earlier get functions and then taking their data into a prompt
+  // This prompt data is selected by the user and used in the SQL query
+
   const roles = await getRoles()
   const roleSelect = await prompt({
     type: 'list',
@@ -255,6 +267,8 @@ const updateEmployeeRole = async () => {
   }
 };
 
+
+// Update Employee Manager
 const updateEmployeeManager = async () => {
   const employees = await getEmployee()
   const employeeSelect = await prompt({
@@ -293,6 +307,7 @@ const updateEmployeeManager = async () => {
 }
 
 
+// View Roles
 const viewRoles = async () => {
   const roles = await getRoles()
   const roleSelect = await prompt({
@@ -307,6 +322,7 @@ const viewRoles = async () => {
   if (roleSelect.role_choice === 'Back') {
     return
   }
+  // Query made to show the name of the department and not just the ID in the table
   const roleQuery = `
   SELECT role.*, department.department_name
   FROM role
@@ -321,6 +337,8 @@ const viewRoles = async () => {
   }
 };
 
+
+// View department
 const viewDepartments = async () => {
   const departments = await getDepartments()
   const departmentSelect = await prompt({
@@ -345,6 +363,8 @@ const viewDepartments = async () => {
   }
 };
 
+
+//  View Employee by manager
 const viewEmployeesByManager = async () => {
   const managers = await getManagers()
   const managerSelect = await prompt({
@@ -367,6 +387,7 @@ const viewEmployeesByManager = async () => {
   }
 };
 
+//  View Employee by department
 const viewEmployeesByDepartment = async () => {
   const departments = await getDepartments()
   const departmentSelect = await prompt({
@@ -391,6 +412,8 @@ const viewEmployeesByDepartment = async () => {
   }
 };
 
+
+// view all employee
 const viewAllEmployees = async () => {
   const employees = await getEmployee()
   const employeeSelect = await prompt({
@@ -416,6 +439,8 @@ const viewAllEmployees = async () => {
   }
 };
 
+
+//  All the delete functions work about the same, using the same structure as earlier they have helper functions they call on
 const deleteDepartment = async (departmentId) => {
   const deleteQuery = 'DELETE IGNORE FROM department WHERE department_id = ?'
   try {
@@ -427,6 +452,7 @@ const deleteDepartment = async (departmentId) => {
 }
 
 const deleteDepartments = async () => {
+  // calling upon getDepartments and using the same prompt scaffold as the main functions
   const departments = await getDepartments()
   const departmentSelect = await prompt({
     type: 'list',
@@ -441,6 +467,7 @@ const deleteDepartments = async () => {
     return
   }
   try {
+    // calling on the helper function to actually run the delete qeury
     await deleteDepartment(departmentSelect.department_choice)
     console.log('Department deleted successfully.')
   } catch (err) {
@@ -448,8 +475,10 @@ const deleteDepartments = async () => {
   }
 };
 
+
+// Delete Employee
 const deleteEmployee = async (employeeId) => {
-  const deleteQuery = 'DELETE FROM employees WHERE employee_id = ?'
+  const deleteQuery = 'DELETE IGNORE FROM employees WHERE employee_id = ?'
   try {
     await queryAsync(deleteQuery, [employeeId])
     console.log(`Employee deleted.`)
@@ -479,8 +508,9 @@ const deleteEmployees = async () => {
   }
 };
 
+// Delete Role
 const deleteRole = async (roleId) => {
-  const deleteQuery = 'DELETE FROM role WHERE role_id = ?';
+  const deleteQuery = 'DELETE IGNORE FROM role WHERE role_id = ?';
   try {
     await queryAsync(deleteQuery, [roleId])
     console.log(`Role deleted.`)
@@ -511,6 +541,7 @@ const deleteRoles = async () => {
   }
 };
 
+// Run the Command line prompts
 mainLoop()
 
 
