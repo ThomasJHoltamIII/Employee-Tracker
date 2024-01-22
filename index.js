@@ -114,9 +114,8 @@ const viewRoles = async () => {
     })).concat('Back'),
   });
   if (roleSelect.role_choice === 'Back') {
-    retur
+    return
   }
-  const roleDeparment = roles.department_id
   const roleQuery = `
   SELECT role.*, department.department_name
   FROM role
@@ -143,7 +142,7 @@ const viewDepartments = async () => {
     })).concat('Back'),
   });
   if (departmentSelect.department_choice === 'Back') {
-    retur
+    return
   }
   const departmentQuery = 'SELECT * FROM department WHERE department_id = ?'
   const departmentValues = [departmentSelect.department_choice]
@@ -188,7 +187,11 @@ const viewAllEmployees = async () => {
     })).concat(`Back`)
   })
   if (employeeSelect.employee_choice === `Back`) {return}
-  const employeeQuery = `SELECT * FROM employees WHERE employee_id = ?`
+  const employeeQuery = `
+  SELECT employees.*, managers.first_name AS manager_first_name, managers.last_name AS manager_last_name
+  FROM employees
+  JOIN managers ON employees.manager_id = managers.manager_id
+  WHERE employees.employee_id = ?`
   const employeeView = [employeeSelect.employee_choice]
   try {
     const employees = await queryAsync(employeeQuery, employeeView)
