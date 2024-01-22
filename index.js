@@ -29,12 +29,14 @@ const mainLoop = async () => {
           'View all Employees',
           'Add Employee',
           'Update Employee Role',
+          'View all Roles',
           'Update Employee Manager',
           'View Employee By Departments',
           'View all Departments',
           'Add Department',
-          // 'Delete Department',
-          'View all Roles',
+          'Delete Department',
+          'Delete Employee',
+          'Delete Role',
           'Exit',
         ],
       },
@@ -76,9 +78,17 @@ const mainLoop = async () => {
         await viewEmployeesByDepartment()
         break;
         
-        // case 'Delete Department':
-        //   await deleteDepartments()
-        //   break;
+        case 'Delete Department':
+          await deleteDepartments()
+          break;
+        
+        case 'Delete Employee':
+          await deleteEmployees()
+          break;
+        
+        case 'Delete Role':
+          await deleteRoles()
+          break;
 
         case 'Exit':
         connection.end()
@@ -172,6 +182,11 @@ const addEmployee = async () => {
       message: 'Enter the last name of the new Employee:'
     },
     {
+      type: 'Input',
+      name: 'salary',
+      message: 'Enter Salary of new Employee:',
+    },
+    {
       type: 'list',
       name: 'role_id',
       message: 'Select the role of the new Employee:',
@@ -184,11 +199,12 @@ const addEmployee = async () => {
       choices: managerChoices
     }
   ])
-const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, salary, role_id, manager_id) VALUES (?, ?, ?, ?, ?)';
   try {
     const newEmployeeAdded = await queryAsync(insertQuery, [
       employeeDetails.first_name,
       employeeDetails.last_name,
+      employeeDetails.salary,
       employeeDetails.role_id,
       employeeDetails.manager_id
     ])
@@ -400,6 +416,100 @@ const viewAllEmployees = async () => {
   }
 };
 
+const deleteDepartment = async (departmentId) => {
+  const deleteQuery = 'DELETE IGNORE FROM department WHERE department_id = ?'
+  try {
+    await queryAsync(deleteQuery, [departmentId])
+    console.log(`Department deleted.`)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const deleteDepartments = async () => {
+  const departments = await getDepartments()
+  const departmentSelect = await prompt({
+    type: 'list',
+    name: 'department_choice',
+    message: 'Select a department to delete:',
+    choices: departments.map(department => ({
+      name: department.department_name,
+      value: department.department_id,
+    })).concat('Back'),
+  })
+  if (departmentSelect.department_choice === 'Back') {
+    return
+  }
+  try {
+    await deleteDepartment(departmentSelect.department_choice)
+    console.log('Department deleted successfully.')
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const deleteEmployee = async (employeeId) => {
+  const deleteQuery = 'DELETE FROM employees WHERE employee_id = ?'
+  try {
+    await queryAsync(deleteQuery, [employeeId])
+    console.log(`Employee deleted.`)
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const deleteEmployees = async () => {
+  const employees = await getEmployee()
+  const employeeSelect = await prompt({
+    type: `list`,
+    name: `employee_choice`,
+    choices: employees.map(employee => ({
+      name: employee.employee_name,
+      value: employee.employee_id,
+    })).concat(`Back`)
+  })
+  if (employeeSelect.employee_choice === 'Back') {
+    return
+  }
+  try {
+    await deleteEmployee(employeeSelect.employee_choice)
+    console.log('Employee deleted successfully.')
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const deleteRole = async (roleId) => {
+  const deleteQuery = 'DELETE FROM role WHERE role_id = ?';
+  try {
+    await queryAsync(deleteQuery, [roleId])
+    console.log(`Role deleted.`)
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const deleteRoles = async () => {
+  const roles = await getRoles()
+  const roleSelect = await prompt({
+    type: 'list',
+    name: 'role_choice',
+    message: 'Select a role',
+    choices: roles.map(role => ({
+      name: role.role_name,
+      value: role.role_id,
+    })).concat('Back'),
+  });
+  if (roleSelect.role_choice === 'Back') {
+    return;
+  }
+  try {
+    await deleteRole(roleSelect.role_choice)
+    console.log('Role deleted successfully.')
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 mainLoop()
 
