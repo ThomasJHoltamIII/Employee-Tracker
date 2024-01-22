@@ -28,6 +28,7 @@ const mainLoop = async () => {
           'View employees by manager',
           'View all employees',
           'View all departments',
+          'View all roles',
           'Exit',
         ],
       },
@@ -43,6 +44,10 @@ const mainLoop = async () => {
 
       case 'View all departments':
         await viewDepartments()
+        break;
+
+      case 'View all roles':
+        await viewRoles()
         break;
 
         case 'Exit':
@@ -86,6 +91,46 @@ const getDepartments = async () => {
   }
 };
 
+const getRoles= async () => {
+  const query = 'SELECT role_id, CONCAT(title) AS role_name FROM role'
+  try {
+    const roles = await queryAsync(query)
+    return roles
+  } catch (err) {
+    console.log(err)
+    return []
+  }
+};
+
+const viewRoles = async () => {
+  const roles = await getRoles()
+  const roleSelect = await prompt({
+    type: 'list',
+    name: 'role_choice',
+    message: 'Select a role',
+    choices: roles.map(role => ({
+      name: role.role_name,
+      value: role.role_id,
+    })).concat('Back'),
+  });
+  if (roleSelect.role_choice === 'Back') {
+    retur
+  }
+  const roleDeparment = roles.department_id
+  const roleQuery = `
+  SELECT role.*, department.department_name
+  FROM role
+  JOIN department ON role.department_id = department.department_id
+  WHERE role.role_id = ?`;
+  const roleValues = [roleSelect.role_choice]
+  try {
+    const rolesTable = await queryAsync(roleQuery, roleValues)
+    console.table(rolesTable)
+  } catch (err) {
+    console.log(err)
+  }
+};
+
 const viewDepartments = async () => {
   const departments = await getDepartments()
   const departmentSelect = await prompt({
@@ -109,8 +154,6 @@ const viewDepartments = async () => {
     console.log(err)
   }
 };
-
-
 
 const viewEmployeesByManager = async () => {
   const managers = await getManagers()
