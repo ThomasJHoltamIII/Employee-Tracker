@@ -28,6 +28,7 @@ const mainLoop = async () => {
           'View Employees By Manager',
           'View all Employees',
           'Add Employee',
+          'Update Employee Role',
           'View all Departments',
           'Add Department',
           // 'Delete Department',
@@ -59,6 +60,10 @@ const mainLoop = async () => {
 
       case 'Add Employee':
         await addEmployee()
+        break;
+
+      case 'Update Employee Role':
+        await updateEmployeeRole()
         break;
         
         // case 'Delete Department':
@@ -179,6 +184,45 @@ const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, role_i
     ])
     console.table(newEmployeeAdded)
     console.log('Employee added successfully.')
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const updateEmployeeRole = async () => {
+  const employees = await getEmployee()
+  const employeeSelect = await prompt({
+    type: `list`,
+    name: `employee_choice`,
+    choices: employees.map(employee => ({
+      name: employee.employee_name,
+      value: employee.employee_id,
+    })).concat(`Back`)
+  })
+  if (employeeSelect.employee_id === 'Back') {
+    return
+  }
+  const roles = await getRoles()
+  const roleSelect = await prompt({
+    type: 'list',
+    name: 'role_choice',
+    message: 'Select a role',
+    choices: roles.map(role => ({
+      name: role.role_name,
+      value: role.role_id,
+    })).concat('Back'),
+  })
+  if (roleSelect.role_choice === 'Back') {
+    return
+  }
+  if (roleSelect.role_id === 'Back') {
+    return
+  }
+  const updateQuery = 'UPDATE employees SET role_id = ? WHERE employee_id = ?'
+  const updateValues = [roleSelect.role_id, employeeSelect.employee_id]
+  try {
+    await queryAsync(updateQuery, updateValues)
+    console.log('Employee role updated successfully.')
   } catch (err) {
     console.error(err)
   }
