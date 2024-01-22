@@ -17,7 +17,7 @@ CREATE TABLE role (
 );
 
 CREATE TABLE managers (
-    manager_id INT NOT NULL PRIMARY KEY,
+    manager_id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL,
     role_id INT NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE managers (
 );
 
 CREATE TABLE employees (
-    employee_id INT NOT NULL,
+    employee_id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL,
     role_name VARCHAR(30) NOT NULL,

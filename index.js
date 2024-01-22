@@ -25,35 +25,40 @@ const mainLoop = async () => {
         name: 'action',
         message: 'What would you like to do?',
         choices: [
-          'View employees by manager',
-          'View all employees',
-          'View all departments',
+          'View Employees By Manager',
+          'View all Employees',
+          'Add Employee',
+          'View all Departments',
           'Add Department',
           // 'Delete Department',
-          'View all roles',
+          'View all Roles',
           'Exit',
         ],
       },
     ])
     switch (answer.action) {
-      case 'View employees by manager':
+      case 'View Employees By Manager':
         await viewEmployeesByManager()
         break;
 
-      case 'View all employees':
+      case 'View all Employees':
         await viewAllEmployees()
         break;
 
-      case 'View all departments':
+      case 'View all Departments':
         await viewDepartments()
         break;
 
-      case 'View all roles':
+      case 'View all Roles':
         await viewRoles()
         break;
 
       case 'Add Department':
         await addDepartment()
+        break;
+
+      case 'Add Employee':
+        await addEmployee()
         break;
         
         // case 'Delete Department':
@@ -124,6 +129,56 @@ const addDepartment = async () => {
   try {
     const newDepartmentAdded = await queryAsync(insertQuery, [newDepartment.department_name])
     console.table(newDepartmentAdded)
+  } catch (err) {
+    console.error(err)
+  }
+};
+
+const addEmployee = async () => {
+  const roles = await getRoles()
+  const managers = await getManagers()
+  const roleChoices = roles.map(role => ({
+    name: role.role_name,
+    value: role.role_id
+  }))
+  const managerChoices = managers.map(manager => ({
+    name: manager.manager_name,
+    value: manager.manager_id
+  }))
+  const employeeDetails = await prompt([
+    {
+      type: 'input',
+      name: 'first_name',
+      message: 'Enter the first name of the new Employee:'
+    },
+    {
+      type: 'input',
+      name: 'last_name',
+      message: 'Enter the last name of the new Employee:'
+    },
+    {
+      type: 'list',
+      name: 'role_id',
+      message: 'Select the role of the new Employee:',
+      choices: roleChoices
+    },
+    {
+      type: 'list',
+      name: 'manager_id',
+      message: 'Select the manager of the new Employee:',
+      choices: managerChoices
+    }
+  ])
+const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+  try {
+    const newEmployeeAdded = await queryAsync(insertQuery, [
+      employeeDetails.first_name,
+      employeeDetails.last_name,
+      employeeDetails.role_id,
+      employeeDetails.manager_id
+    ])
+    console.table(newEmployeeAdded)
+    console.log('Employee added successfully.')
   } catch (err) {
     console.error(err)
   }
