@@ -30,6 +30,7 @@ const mainLoop = async () => {
           'Add Employee',
           'Update Employee Role',
           'Update Employee Manager',
+          'View Employee By Departments',
           'View all Departments',
           'Add Department',
           // 'Delete Department',
@@ -69,6 +70,10 @@ const mainLoop = async () => {
 
       case 'Update Employee Manager':
         await updateEmployeeManager()
+        break;
+
+      case 'View Employee By Departments':
+        await viewEmployeesByDepartment()
         break;
         
         // case 'Delete Department':
@@ -341,6 +346,30 @@ const viewEmployeesByManager = async () => {
   try {
     const employeesByManager = await queryAsync(employeeByManagerQuery, employeeByManagerValues)
     console.table(employeesByManager)
+  } catch (err) {
+    console.log(err)
+  }
+};
+
+const viewEmployeesByDepartment = async () => {
+  const departments = await getDepartments()
+  const departmentSelect = await prompt({
+    type: 'list',
+    name: 'department_choice',
+    message: 'Select a Department',
+    choices: departments.map(department => ({
+      name: department.department_name,
+      value: department.department_id,
+    })).concat('Back'),
+  })
+  if (departmentSelect.department_choice === 'Back') {
+    return
+  }
+  const employeeByDepartmentQuery = 'SELECT * FROM employees WHERE role_id IN (SELECT role_id FROM role WHERE department_id = ?)'
+  const employeeByDepartmentValues = [departmentSelect.department_choice]
+  try {
+    const employeesByDepartment = await queryAsync(employeeByDepartmentQuery, employeeByDepartmentValues)
+    console.table(employeesByDepartment);
   } catch (err) {
     console.log(err)
   }
