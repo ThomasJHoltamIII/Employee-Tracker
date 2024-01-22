@@ -28,6 +28,8 @@ const mainLoop = async () => {
           'View employees by manager',
           'View all employees',
           'View all departments',
+          'Add Department',
+          // 'Delete Department',
           'View all roles',
           'Exit',
         ],
@@ -49,6 +51,14 @@ const mainLoop = async () => {
       case 'View all roles':
         await viewRoles()
         break;
+
+      case 'Add Department':
+        await addDepartment()
+        break;
+        
+        // case 'Delete Department':
+        //   await deleteDepartments()
+        //   break;
 
         case 'Exit':
         connection.end()
@@ -99,6 +109,23 @@ const getRoles= async () => {
   } catch (err) {
     console.log(err)
     return []
+  }
+};
+
+const addDepartment = async () => {
+  const newDepartment = await prompt([
+    {
+      type: 'input',
+      name: 'department_name',
+      message: 'Enter the name of the new department:'
+    }
+  ])
+  const insertQuery = 'INSERT INTO department (department_name) VALUES (?)'
+  try {
+    const newDepartmentAdded = await queryAsync(insertQuery, [newDepartment.department_name])
+    console.table(newDepartmentAdded)
+  } catch (err) {
+    console.error(err)
   }
 };
 
