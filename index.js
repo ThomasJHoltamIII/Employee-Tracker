@@ -27,6 +27,7 @@ const mainLoop = async () => {
         choices: [
           'View employees by manager',
           'View all employees',
+          'View all departments',
           'Exit',
         ],
       },
@@ -38,6 +39,10 @@ const mainLoop = async () => {
 
       case 'View all employees':
         await viewAllEmployees()
+        break;
+
+      case 'View all departments':
+        await viewDepartments()
         break;
 
         case 'Exit':
@@ -69,6 +74,43 @@ const getEmployee = async () => {
     return []
   }
 };
+
+const getDepartments = async () => {
+  const query = 'SELECT * FROM department'
+  try {
+    const departments = await queryAsync(query)
+    return departments
+  } catch (err) {
+    console.log(err)
+    return []
+  }
+};
+
+const viewDepartments = async () => {
+  const departments = await getDepartments()
+  const departmentSelect = await prompt({
+    type: 'list',
+    name: 'department_choice',
+    message: 'Select a department',
+    choices: departments.map(department => ({
+      name: department.department_name,
+      value: department.department_id,
+    })).concat('Back'),
+  });
+  if (departmentSelect.department_choice === 'Back') {
+    retur
+  }
+  const departmentQuery = 'SELECT * FROM department WHERE department_id = ?'
+  const departmentValues = [departmentSelect.department_choice]
+  try {
+    const employees = await queryAsync(departmentQuery, departmentValues)
+    console.table(employees)
+  } catch (err) {
+    console.log(err)
+  }
+};
+
+
 
 const viewEmployeesByManager = async () => {
   const managers = await getManagers()
