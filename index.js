@@ -29,6 +29,7 @@ const mainLoop = async () => {
           'View all Employees',
           'Add Employee',
           'Update Employee Role',
+          'Update Employee Manager',
           'View all Departments',
           'Add Department',
           // 'Delete Department',
@@ -64,6 +65,10 @@ const mainLoop = async () => {
 
       case 'Update Employee Role':
         await updateEmployeeRole()
+        break;
+
+      case 'Update Employee Manager':
+        await updateEmployeeManager()
         break;
         
         // case 'Delete Department':
@@ -220,6 +225,7 @@ const updateEmployeeRole = async () => {
   }
   const updateQuery = 'UPDATE employees SET role_id = ? WHERE employee_id = ?'
   const updateValues = [roleSelect.role_id, employeeSelect.employee_id]
+
   try {
     await queryAsync(updateQuery, updateValues)
     console.log('Employee role updated successfully.')
@@ -227,6 +233,44 @@ const updateEmployeeRole = async () => {
     console.error(err)
   }
 };
+
+const updateEmployeeManager = async () => {
+  const employees = await getEmployee()
+  const employeeSelect = await prompt({
+    type: `list`,
+    name: `employee_choice`,
+    choices: employees.map(employee => ({
+      name: employee.employee_name,
+      value: employee.employee_id,
+    })).concat(`Back`)
+  })
+  if (employeeSelect.employee_id === 'Back') {
+    return
+  }
+  const managers = await getManagers()
+  const managerChoices = managers.map(manager => ({
+    name: manager.manager_name,
+    value: manager.manager_id
+  }))
+  const managerChoice = await prompt({
+    type: 'list',
+    name: 'manager_id',
+    message: 'Select the new manager for the employee:',
+    choices: managerChoices.concat('Back'),
+  })
+  if (managerChoice.manager_id === 'Back') {
+    return
+  }
+  const updateQuery = 'UPDATE employees SET manager_id = ? WHERE employee_id = ?'
+  const updateValues = [managerChoice.manager_id, employeeSelect.employee_id]
+  try {
+    await queryAsync(updateQuery, updateValues)
+    console.log('Employee manager updated successfully.')
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 
 const viewRoles = async () => {
   const roles = await getRoles()
