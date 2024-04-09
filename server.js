@@ -20,6 +20,7 @@ connection.connect((err) => {
 // Main Inquirer pormpt loop
 const mainLoop = async () => {
   while (true) {
+    try {
     const answer = await prompt([
       {
         type: 'list',
@@ -92,13 +93,16 @@ const mainLoop = async () => {
           await deleteRoles()
           break;
 
-        case 'Exit':
-        connection.end()
-        console.log('See you again soon!')
-        process.exit()
+          case 'Exit':
+            console.log('See you again soon!');
+            connection.end();
+            process.exit();
+        }
+      } catch (error) {
+        console.error('An error occurred:', error);
+      }
     }
-  }
-};
+  };
 
 // Get functions using async that are called on in later queries that specify certian data that is needed, such as first and last names
 const getManagers = async () => {

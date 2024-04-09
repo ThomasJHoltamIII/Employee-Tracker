@@ -1,27 +1,27 @@
-INSERT INTO department (department_id, department_name) VALUES
-  (1, 'Producers'),
-  (2, 'Artists'),
-  (3, 'Writers');
+USE employee_tracker_db;
 
-INSERT INTO role (role_id, title, department_id) VALUES
-  (1, 'Producer', 1),
-  (2, 'Lead Artist', 2),
-  (3, 'Penciller', 2),
-  (4, 'Colorist', 2),
-  (5, 'Lead Author', 3),
-  (6, 'Author', 3),
-  (7, 'Storyboard Artist', 3);
+INSERT INTO department (department_name) VALUES
+('Producers'),
+('Artists'),
+('Writers');
 
-INSERT INTO managers (manager_id, first_name, last_name, role_id, salary) VALUES
-  (1, 'Stan', 'Lee', 1, 250000),
-  (2, 'Jack', 'Kirby', 2, 245000),
-  (3, 'Alan', 'Moore', 5, 200000);
+INSERT INTO role (title, department_id, salary) VALUES
+('Producer', 1, 80000),
+('Lead Artist', 2, 75000),
+('Penciller', 2, 70000),
+('Colorist', 2, 65000),
+('Lead Author', 3, 85000),
+('Author', 3, 50000),
+('Storyboard Artist', 3, 60000);
 
-INSERT INTO employees (employee_id, first_name, last_name, role_name, role_id, manager_id, salary) VALUES
-  (1, 'Chris', 'Claremont', 'Producer', 1, 1, 120000),
-  (2, 'Todd', 'McFarlane', 'Lead Artist', 2, 1, 175000),
-  (3, 'Jim', 'Lee', 'Colorist', 4, 2, 110000), 
-  (4, 'Frank', 'Miller', 'Penciller', 3, 2, 155000),
-  (5, 'Neil', 'Gaiman', 'Author', 6, 3, 130000),
-  (6, 'Brian', 'K. Vaughan', 'Author', 6, 3, 82000),
-  (7, 'Amanda', 'Conner', 'Storyboard Artist', 7, 3, 110000);
+INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES
+('Stan', 'Lee', 1, NULL),
+('Jack', 'Kirby', 2, NULL),
+('Alan', 'Moore', 5, NULL),
+('Chris', 'Claremont', 1, 1),
+('Todd', 'McFarlane', 2, 1),
+('Jim', 'Lee', 4, 2),
+('Frank', 'Miller', 3, 2),
+('Neil', 'Gaiman', 6, 3),
+('Brian', 'K. Vaughan', 6, 3),
+('Amanda', 'Conner', 7, 3);
