@@ -126,13 +126,21 @@ const getManagers = async () => {
 };
 
 const getEmployee = async () => {
-  const query = 'SELECT employee_id, CONCAT(first_name, " ", last_name) AS employee_name FROM employee'
+  const query = `
+    SELECT 
+      e.employee_id, 
+      CONCAT(e.first_name, " ", e.last_name) AS employee_name, 
+      r.title AS role, 
+      CONCAT(m.first_name, " ", m.last_name) AS manager_name
+    FROM employee e
+    LEFT JOIN employee m ON e.manager_id = m.employee_id
+    JOIN role r ON e.role_id = r.role_id`;
   try {
-    const managers = await queryAsync(query)
-    return managers
+    const employees = await queryAsync(query);
+    return employees;
   } catch (err) {
-    console.log(err)
-    return []
+    console.log(err);
+    return [];
   }
 };
 
@@ -231,87 +239,79 @@ const insertQuery = 'INSERT IGNORE INTO employee (first_name, last_name, role_id
 
 //  Update Employee Role
 const updateEmployeeRole = async () => {
-  const employee = await getEmployee()
+  const employees = await getEmployee(); 
   const employeeSelect = await prompt({
-    type: `list`,
-    name: `employee_choice`,
-    choices: employee.map(employee => ({
+    type: 'list',
+    name: 'employee_id', 
+    message: 'Select an employee to update their role:',
+    choices: employees.map(employee => ({
       name: employee.employee_name,
       value: employee.employee_id,
-    })).concat(`Back`)
-  })
-  if (employeeSelect.employee_id === 'Back') {
-    return
+    })).concat({ name: 'Back', value: null }) 
+  });
+  if (employeeSelect.employee_id === null) {
+    return;
   }
-
-  // This structure is used in almost every function, calling upon earlier get functions and then taking their data into a prompt
-  // This prompt data is selected by the user and used in the SQL query
-
-  const roles = await getRoles()
-  const roleSelect = await prompt({
+  const roles = await getRoles(); 
+  const roleChoice = await prompt({
     type: 'list',
-    name: 'role_choice',
-    message: 'Select a role',
+    name: 'role_id',
+    message: 'Select the new role for the employee:',
     choices: roles.map(role => ({
       name: role.role_name,
-      value: role.role_id,
-    })).concat('Back'),
-  })
-  if (roleSelect.role_choice === 'Back') {
-    return
-  }
-  if (roleSelect.role_id === 'Back') {
-    return
-  }
-  const updateQuery = 'UPDATE employee SET role_id = ? WHERE employee_id = ?'
-  const updateValues = [roleSelect.role_id, employeeSelect.employee_id]
-
+      value: role.role_id
+    }))
+  });
+  const updateQuery = 'UPDATE employee SET role_id = ? WHERE employee_id = ?';
+  const updateValues = [roleChoice.role_id, employeeSelect.employee_id];
   try {
-    await queryAsync(updateQuery, updateValues)
-    console.log('Employee role updated successfully.')
+    await queryAsync(updateQuery, updateValues);
+    console.log('Employee role updated successfully.');
   } catch (err) {
-    console.error(err)
+    console.error('Error updating employee role:', err);
   }
 };
 
 
+
 // Update Employee Manager
 const updateEmployeeManager = async () => {
-  const employee = await getEmployee()
+  const employees = await getEmployee();
   const employeeSelect = await prompt({
-    type: `list`,
-    name: `employee_choice`,
-    choices: employee.map(employee => ({
+    type: 'list',
+    name: 'employee_id',
+    message: 'Select an employee to update their manager:',
+    choices: employees.map(employee => ({
       name: employee.employee_name,
       value: employee.employee_id,
-    })).concat(`Back`)
-  })
+    })).concat('Back')
+  });
   if (employeeSelect.employee_id === 'Back') {
-    return
+    return;
   }
-  const managers = await getManagers()
-  const managerChoices = managers.map(manager => ({
-    name: manager.manager_name,
-    value: manager.manager_id
-  }))
+  const managers = await getManagers();
   const managerChoice = await prompt({
     type: 'list',
     name: 'manager_id',
     message: 'Select the new manager for the employee:',
-    choices: managerChoices.concat('Back'),
-  })
-  if (managerChoice.manager_id === 'Back') {
-    return
+    choices: managers.map(manager => ({
+      name: manager.manager_name,
+      value: manager.manager_id
+    })).concat('No Manager'),
+  });
+  if (managerChoice.manager_id === 'No Manager') {
+    managerChoice.manager_id = null;
   }
-  const updateQuery = 'UPDATE employee SET manager_id = ? WHERE employee_id = ?'
-  const updateValues = [managerChoice.manager_id, employeeSelect.employee_id]
+  const updateQuery = 'UPDATE employee SET manager_id = ? WHERE employee_id = ?';
+  const updateValues = [managerChoice.manager_id, employeeSelect.employee_id];
   try {
-    await queryAsync(updateQuery, updateValues)
-    console.log('Employee manager updated successfully.')
+    await queryAsync(updateQuery, updateValues);
+    console.log('Employee manager updated successfully.');
   } catch (err) {
-    console.error(err)
+    console.error('Error updating employee manager:', err);
   }
-}
+};
+
 
 
 // View Roles
@@ -457,44 +457,49 @@ const viewEmployeesByDepartment = async () => {
 
 // view all employee
 const viewAllEmployees = async () => {
-  const employees = await getEmployee();
-  const employeeSelect = await prompt({
-    type: `list`,
-    name: `employee_choice`,
-    choices: employees.map(employee => ({
-      name: employee.employee_name,
-      value: employee.employee_id,
-    })).concat(`Back`)
-  });
-  if (employeeSelect.employee_choice === `Back`) {return;}
-  const employeeQuery = `
-    SELECT e.employee_id, e.first_name, e.last_name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
-    FROM employee e
-    LEFT JOIN employee m ON e.manager_id = m.employee_id
-    WHERE e.employee_id = ?`;
-  const employeeView = [employeeSelect.employee_choice];
+  const employees = await getEmployee(); 
+  if (employees.length === 0) {
+    console.log("No employees found.");
+    return;
+  }
+  console.table(employees.map(employee => ({
+    ID: employee.employee_id,
+    Name: employee.employee_name,
+    Role: employee.role,
+    Manager: employee.manager_name || 'None'
+  })));
+};
+
+// Delete Department
+const deleteDepartment = async (departmentId) => {
+  const updateEmployeesQuery = 'UPDATE employee SET role_id = NULL WHERE role_id IN (SELECT role_id FROM role WHERE department_id = ?)';
   try {
-    const employeeDetails = await queryAsync(employeeQuery, employeeView);
-    console.table(employeeDetails);
+    await queryAsync(updateEmployeesQuery, [departmentId]);
+    console.log(`Employees disassociated from roles in department ${departmentId}.`);
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    return;
+  }
+  const deleteRolesQuery = 'DELETE FROM role WHERE department_id = ?';
+  try {
+    await queryAsync(deleteRolesQuery, [departmentId]);
+    console.log(`Roles associated with the department ${departmentId} have been deleted.`);
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+  const deleteDepartmentQuery = 'DELETE FROM department WHERE department_id = ?';
+  try {
+    await queryAsync(deleteDepartmentQuery, [departmentId]);
+    console.log(`Department ${departmentId} deleted successfully.`);
+  } catch (err) {
+    console.error(err);
   }
 };
 
 
-//  All the delete functions work about the same, using the same structure as earlier they have helper functions they call on
-const deleteDepartment = async (departmentId) => {
-  const deleteQuery = 'DELETE IGNORE FROM department WHERE department_id = ?'
-  try {
-    await queryAsync(deleteQuery, [departmentId])
-    console.log(`Department deleted.`)
-  } catch (err) {
-    console.error(err)
-  }
-}
 
 const deleteDepartments = async () => {
-  // calling upon getDepartments and using the same prompt scaffold as the main functions
   const departments = await getDepartments()
   const departmentSelect = await prompt({
     type: 'list',
@@ -509,7 +514,6 @@ const deleteDepartments = async () => {
     return
   }
   try {
-    // calling on the helper function to actually run the delete qeury
     await deleteDepartment(departmentSelect.department_choice)
     console.log('Department deleted successfully.')
   } catch (err) {
@@ -552,14 +556,23 @@ const deleteEmployees = async () => {
 
 // Delete Role
 const deleteRole = async (roleId) => {
-  const deleteQuery = 'DELETE IGNORE FROM role WHERE role_id = ?';
+  const updateEmployeesQuery = 'UPDATE employee SET role_id = NULL WHERE role_id = ?';
   try {
-    await queryAsync(deleteQuery, [roleId])
-    console.log(`Role deleted.`)
+    await queryAsync(updateEmployeesQuery, [roleId]);
+    console.log(`Employees disassociated from role ${roleId}.`);
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    return;
+  }
+  const deleteQuery = 'DELETE FROM role WHERE role_id = ?';
+  try {
+    await queryAsync(deleteQuery, [roleId]);
+    console.log(`Role ${roleId} deleted successfully.`);
+  } catch (err) {
+    console.error(err);
   }
 };
+
 
 const deleteRoles = async () => {
   const roles = await getRoles()
