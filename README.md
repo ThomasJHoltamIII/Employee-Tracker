@@ -48,20 +48,16 @@ Follow these steps to set up the Employee Tracker application on your system:
 2. **Install Dependencies**
    - Navigate into the cloned repository directory:
 
-   - Install the required dependencies with npm:
-     ``` npm i
+   - Install the required dependencies with npm: npm i
 
 3. **Database Setup**
-   - Log into your MySQL shell:
-      ``` mysql -u root -p
+   - Log into your MySQL shell: mysql -u root -p
    
-   - Source the `schema.sql` file to create the database and tables:
-     ``` SOURCE schema.sql;
+   - Source the `schema.sql` file to create the database and tables: SOURCE schema.sql;
    - Optionally, source the `seeds.sql` file to populate the database with initial data:
 
 4. **Run the Application**
-   - Start the application with:
-     ``` npm start
+   - Start the application with: npm start
 
 Now, you're ready to use the Employee Tracker to manage your company's database!
 
