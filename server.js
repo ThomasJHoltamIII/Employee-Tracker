@@ -27,14 +27,15 @@ const mainLoop = async () => {
         name: 'action',
         message: 'What would you like to do?',
         choices: [
-          'View Employees By Manager',
-          'View all Employees',
+          'View employee By Manager',
+          'View all employee',
           'Add Employee',
           'Update Employee Role',
           'View all Roles',
           'Update Employee Manager',
           'View Employee By Departments',
           'View all Departments',
+          'View Departments Budget',
           'Add Department',
           'Delete Department',
           'Delete Employee',
@@ -45,16 +46,20 @@ const mainLoop = async () => {
     ])
     // Functions to fire off prompts for specific queries
     switch (answer.action) {
-      case 'View Employees By Manager':
+      case 'View employee By Manager':
         await viewEmployeesByManager()
         break;
 
-      case 'View all Employees':
+      case 'View all employee':
         await viewAllEmployees()
         break;
 
       case 'View all Departments':
         await viewDepartments()
+        break;
+
+      case 'View Departments Budget':
+        await viewDepartmentBudget()
         break;
 
       case 'View all Roles':
@@ -121,7 +126,7 @@ const getManagers = async () => {
 };
 
 const getEmployee = async () => {
-  const query = 'SELECT employee_id, CONCAT(first_name, " ", last_name) AS employee_name FROM employees'
+  const query = 'SELECT employee_id, CONCAT(first_name, " ", last_name) AS employee_name FROM employee'
   try {
     const managers = await queryAsync(query)
     return managers
@@ -196,11 +201,6 @@ const addEmployee = async () => {
       message: 'Enter the last name of the new Employee:'
     },
     {
-      type: 'Input',
-      name: 'salary',
-      message: 'Enter Salary of new Employee:',
-    },
-    {
       type: 'list',
       name: 'role_id',
       message: 'Select the role of the new Employee:',
@@ -213,12 +213,11 @@ const addEmployee = async () => {
       choices: managerChoices
     }
   ])
-const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, salary, role_id, manager_id) VALUES (?, ?, ?, ?, ?)';
+const insertQuery = 'INSERT IGNORE INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
   try {
     const newEmployeeAdded = await queryAsync(insertQuery, [
       employeeDetails.first_name,
       employeeDetails.last_name,
-      employeeDetails.salary,
       employeeDetails.role_id,
       employeeDetails.manager_id
     ])
@@ -232,11 +231,11 @@ const insertQuery = 'INSERT IGNORE INTO employees (first_name, last_name, salary
 
 //  Update Employee Role
 const updateEmployeeRole = async () => {
-  const employees = await getEmployee()
+  const employee = await getEmployee()
   const employeeSelect = await prompt({
     type: `list`,
     name: `employee_choice`,
-    choices: employees.map(employee => ({
+    choices: employee.map(employee => ({
       name: employee.employee_name,
       value: employee.employee_id,
     })).concat(`Back`)
@@ -264,7 +263,7 @@ const updateEmployeeRole = async () => {
   if (roleSelect.role_id === 'Back') {
     return
   }
-  const updateQuery = 'UPDATE employees SET role_id = ? WHERE employee_id = ?'
+  const updateQuery = 'UPDATE employee SET role_id = ? WHERE employee_id = ?'
   const updateValues = [roleSelect.role_id, employeeSelect.employee_id]
 
   try {
@@ -278,11 +277,11 @@ const updateEmployeeRole = async () => {
 
 // Update Employee Manager
 const updateEmployeeManager = async () => {
-  const employees = await getEmployee()
+  const employee = await getEmployee()
   const employeeSelect = await prompt({
     type: `list`,
     name: `employee_choice`,
-    choices: employees.map(employee => ({
+    choices: employee.map(employee => ({
       name: employee.employee_name,
       value: employee.employee_id,
     })).concat(`Back`)
@@ -304,7 +303,7 @@ const updateEmployeeManager = async () => {
   if (managerChoice.manager_id === 'Back') {
     return
   }
-  const updateQuery = 'UPDATE employees SET manager_id = ? WHERE employee_id = ?'
+  const updateQuery = 'UPDATE employee SET manager_id = ? WHERE employee_id = ?'
   const updateValues = [managerChoice.manager_id, employeeSelect.employee_id]
   try {
     await queryAsync(updateQuery, updateValues)
@@ -364,17 +363,51 @@ const viewDepartments = async () => {
   const departmentQuery = 'SELECT * FROM department WHERE department_id = ?'
   const departmentValues = [departmentSelect.department_choice]
   try {
-    const employees = await queryAsync(departmentQuery, departmentValues)
-    console.table(employees)
+    const employee = await queryAsync(departmentQuery, departmentValues)
+    console.table(employee)
   } catch (err) {
     console.log(err)
   }
 };
 
+// View department budget
+const viewDepartmentBudget = async () => {
+  const departments = await getDepartments();
+  const departmentSelect = await prompt({
+    type: 'list',
+    name: 'department_choice',
+    message: 'Select a department to view its utilized budget:',
+    choices: departments.map(department => ({
+      name: department.department_name,
+      value: department.department_id,
+    })).concat('Back'),
+  });
+  if (departmentSelect.department_choice === 'Back') {
+    return;
+  }
+  const budgetQuery = `
+    SELECT d.department_name, SUM(r.salary) AS total_budget
+    FROM employee e
+    JOIN role r ON e.role_id = r.role_id
+    JOIN department d ON r.department_id = d.department_id
+    WHERE d.department_id = ?
+    GROUP BY d.department_name`;
+  try {
+    const [budget] = await queryAsync(budgetQuery, [departmentSelect.department_choice]);
+    if (budget.total_budget) {
+      console.log(`The total budget for the ${budget.department_name} is: $${budget.total_budget}`);
+    } else {
+      console.log(`No budget for the ${budget.department_name} department.`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-//  View Employee by manager
+
+// View Employee by manager
 const viewEmployeesByManager = async () => {
-  const managers = await getManagers()
+  const managers = await getManagers();
   const managerSelect = await prompt({
     type: 'list',
     name: 'manager_choice',
@@ -383,15 +416,16 @@ const viewEmployeesByManager = async () => {
       name: manager.manager_name,
       value: manager.manager_id,
     })).concat('Back'),
-  })
-  if (managerSelect.manager_choice === 'Back') {return}
-  const employeeByManagerQuery = 'SELECT * FROM employees WHERE manager_id = ?'
-  const employeeByManagerValues = [managerSelect.manager_choice]
+  });
+  if (managerSelect.manager_choice === 'Back') return;
+
+  const employeeByManagerQuery = 'SELECT * FROM employee WHERE manager_id = ?';
+  const employeeByManagerValues = [managerSelect.manager_choice];
   try {
-    const employeesByManager = await queryAsync(employeeByManagerQuery, employeeByManagerValues)
-    console.table(employeesByManager)
+    const employeesByManager = await queryAsync(employeeByManagerQuery, employeeByManagerValues);
+    console.table(employeesByManager);
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 };
 
@@ -410,7 +444,7 @@ const viewEmployeesByDepartment = async () => {
   if (departmentSelect.department_choice === 'Back') {
     return
   }
-  const employeeByDepartmentQuery = 'SELECT * FROM employees WHERE role_id IN (SELECT role_id FROM role WHERE department_id = ?)'
+  const employeeByDepartmentQuery = 'SELECT * FROM employee WHERE role_id IN (SELECT role_id FROM role WHERE department_id = ?)'
   const employeeByDepartmentValues = [departmentSelect.department_choice]
   try {
     const employeesByDepartment = await queryAsync(employeeByDepartmentQuery, employeeByDepartmentValues)
@@ -423,7 +457,7 @@ const viewEmployeesByDepartment = async () => {
 
 // view all employee
 const viewAllEmployees = async () => {
-  const employees = await getEmployee()
+  const employees = await getEmployee();
   const employeeSelect = await prompt({
     type: `list`,
     name: `employee_choice`,
@@ -431,19 +465,19 @@ const viewAllEmployees = async () => {
       name: employee.employee_name,
       value: employee.employee_id,
     })).concat(`Back`)
-  })
-  if (employeeSelect.employee_choice === `Back`) {return}
+  });
+  if (employeeSelect.employee_choice === `Back`) {return;}
   const employeeQuery = `
-  SELECT employees.*, managers.first_name AS manager_first_name, managers.last_name AS manager_last_name
-  FROM employees
-  JOIN managers ON employees.manager_id = managers.manager_id
-  WHERE employees.employee_id = ?`
-  const employeeView = [employeeSelect.employee_choice]
+    SELECT e.employee_id, e.first_name, e.last_name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
+    FROM employee e
+    LEFT JOIN employee m ON e.manager_id = m.employee_id
+    WHERE e.employee_id = ?`;
+  const employeeView = [employeeSelect.employee_choice];
   try {
-    const employees = await queryAsync(employeeQuery, employeeView)
-    console.table(employees)
+    const employeeDetails = await queryAsync(employeeQuery, employeeView);
+    console.table(employeeDetails);
   } catch (err) {
-    console.log(err)
+    console.log(err);
   }
 };
 
@@ -486,7 +520,7 @@ const deleteDepartments = async () => {
 
 // Delete Employee
 const deleteEmployee = async (employeeId) => {
-  const deleteQuery = 'DELETE IGNORE FROM employees WHERE employee_id = ?'
+  const deleteQuery = 'DELETE IGNORE FROM employee WHERE employee_id = ?'
   try {
     await queryAsync(deleteQuery, [employeeId])
     console.log(`Employee deleted.`)
@@ -496,11 +530,11 @@ const deleteEmployee = async (employeeId) => {
 };
 
 const deleteEmployees = async () => {
-  const employees = await getEmployee()
+  const employee = await getEmployee()
   const employeeSelect = await prompt({
     type: `list`,
     name: `employee_choice`,
-    choices: employees.map(employee => ({
+    choices: employee.map(employee => ({
       name: employee.employee_name,
       value: employee.employee_id,
     })).concat(`Back`)
