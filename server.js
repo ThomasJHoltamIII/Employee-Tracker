@@ -106,13 +106,17 @@ const mainLoop = async () => {
 
 // Get functions using async that are called on in later queries that specify certian data that is needed, such as first and last names
 const getManagers = async () => {
-  const query = 'SELECT manager_id, CONCAT(first_name, " ", last_name) AS manager_name FROM managers'
+  const query = `
+    SELECT employee_id AS manager_id, CONCAT(first_name, " ", last_name) AS manager_name 
+    FROM employee
+    WHERE employee_id IN (SELECT DISTINCT manager_id FROM employee WHERE manager_id IS NOT NULL)
+  `;
   try {
-    const managers = await queryAsync(query)
-    return managers
+    const managers = await queryAsync(query);
+    return managers;
   } catch (err) {
-    console.log(err)
-    return []
+    console.log(err);
+    return [];
   }
 };
 
@@ -138,14 +142,14 @@ const getDepartments = async () => {
   }
 };
 
-const getRoles= async () => {
-  const query = 'SELECT role_id, CONCAT(title) AS role_name FROM role'
+const getRoles = async () => {
+  const query = 'SELECT role_id, title AS role_name FROM role';
   try {
-    const roles = await queryAsync(query)
-    return roles
+    const roles = await queryAsync(query);
+    return roles;
   } catch (err) {
-    console.log(err)
-    return []
+    console.log(err);
+    return [];
   }
 };
 
